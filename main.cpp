@@ -66,12 +66,6 @@ int main()
 }
 */
 
-double pow(double num, int exp)
-{
-    if(exp < 1) return 1;
-    return pow(num, exp - 1) * num;
-}
-
 void printBinaryIndex(int bits, int index)
 {
     if(bits < 1) return;
