@@ -16,9 +16,10 @@ public:
     ~BackwardDropping();
 
     pair<double,set<int> > findMaxSubset(const set<int>& subset);
+    static void printSet(const set<int>& s);
 
-private:
-    int dropOneVariable(const set<int>& subset);
+//private:
+    pair<double, set<int> > dropOneVariable(const set<int>& subset);
     double I_stat(const set<int>& s);
     double pow(double num, int exp);
 

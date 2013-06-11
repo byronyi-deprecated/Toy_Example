@@ -1,7 +1,7 @@
 #include <iostream>
+#include <BackwardDropping.hpp>
+#include <cstdlib>
 #include <set>
-#include <vector>
-#include <list>
 using namespace std;
 /*
 
@@ -66,91 +66,104 @@ int main()
 }
 */
 
-void printBinaryIndex(int bits, int index)
-{
-    if(bits < 1) return;
+//void printBinaryIndex(int bits, int index)
+//{
+//    if(bits < 1) return;
 
-    int p = pow(2, bits - 1);
-    if(index >= p)
-    {
-        cout << "1 ";
-        printBinaryIndex(bits - 1, index - p);
-    }
-    else
-    {
-        cout << "0 ";
-        printBinaryIndex(bits - 1, index);
-    }
-}
+//    int p = pow(2, bits - 1);
+//    if(index >= p)
+//    {
+//        cout << "1 ";
+//        printBinaryIndex(bits - 1, index - p);
+//    }
+//    else
+//    {
+//        cout << "0 ";
+//        printBinaryIndex(bits - 1, index);
+//    }
+//}
 
 int main()
 {
-    bool data[5][2000];
+    cout << "This is the toy example from H. Wang's paper." << endl;
+    cout << "All the variable is binary (0 or 1)." << endl;
 
-    for(int i = 0; i != 5; ++i)
-        for(int j = 0; j != 2000; ++j)
-        {
-            if(data[i][j]) data[i][j] = 1;
-            else data[i][j] = 0;
-        }
+    unsigned int dimX;
+    unsigned int size;
 
-    // random pick several features and construct a subset
+    cout << "Customize parameters (y/n)? " ;
+    char y;
+    cin >> y;
 
-    int Y1_cnt = 0;
-    for(int j = 0; j != 2000; ++j)
-        Y1_cnt += data[0][j];
-
-    double ratio = Y1_cnt / 2000.0;
-
-    set<int> s;
-//    s.insert(1);
-//    s.insert(2);
-//    s.insert(3);
-//    s.insert(4);
-
-    vector<list<int> > subsets( pow(2, s.size()), list<int>() );
-
-    for(size_t i = 0; i != 2000; ++i)
+    if(y == 'y')
     {
-        size_t subset_idx = 0;
+        cout << "Please enter the dimension of X: ";
+        cin >> dimX;
+        cout << endl;
 
-        for(set<int>::iterator iter = s.begin(); iter != s.end(); ++iter)
-        {
-            subset_idx *= 2;
-            subset_idx += data[*iter][i];
-        }
 
-        subsets[subset_idx].push_back(i);
+        cout << "Please enter the size of training example: ";
+        cin >> size;
+        cout << endl << endl;
+    }
+    else
+    {
+        dimX = 30;
+        size = 150;
     }
 
-    double i_stat = 0;
+    cout << "Generating X randomly...." << endl << endl;
 
-    int cnt = 0;
+    srand(1);
 
-    for(vector<list<int> >::iterator iter1 = subsets.begin(); iter1 != subsets.end(); ++iter1)
+    int** data = new int*[dimX + 1];
+    for(int i = 0; i != dimX + 1; ++i)
+        data[i] = new int[size];
+
+    for(int i = 0; i != dimX + 1; ++i)
+        for(int j = 0; j != size; ++j)
+            data[i][j] = rand() % 2;
+
+    for(int j = 0; j != size; ++j)
     {
-        int num_of_Y1 = 0;
-        size_t partition_size = (*iter1).size();
-
-        for(list<int>::iterator iter2 = (*iter1).begin(); iter2 != (*iter1).end(); ++iter2)
-        {
-            if(data[0][*iter2])
-                ++num_of_Y1;
-        }
-
-        double temp = (ratio * partition_size - num_of_Y1);
-        i_stat += pow(temp, 2);
-
-        cout << "Variables in subset: x_{1 2 3 4}.\nThe partition comes from ";
-        printBinaryIndex(4, cnt++);
-        cout << endl;
-        cout << "partition size is " << partition_size << endl;
-        cout << "Num of Y1 is " << num_of_Y1 << endl;
-        cout << "Y1 ratio in the partition is " << ((double) num_of_Y1 / partition_size) << endl;
-        cout << endl;
+        if(rand() % 2) data[0][j] = (data[1][j]  + data[2][j] + data[3][j]) % 2;
+        else data[0][j] = (data[4][j] + data[5][j]) % 2;
     }
 
-    cout << "The Y1 ratio in whole sample is " << ratio << endl;
-    cout << "I_stat is " << i_stat << endl;
+    cout << "As in the paper, response variable Y is generated using formula: " << endl;
+    cout << "Y = (X_1 + X_2 + X_3) (modulo 2) " << endl;
+    cout << "Y = (X_4 + X_5) (modulo 2) " << endl;
+    cout << "Both of two formulas have 50% chance" << endl;
+    cout << endl << endl;
 
+    cout << "Training..." << endl << endl;
+    BackwardDropping trainingSet(data, dimX, size);
+
+    set<int> subset;
+
+    cout << "Please enter the size of initial subset: ";
+    int size_set;
+    cin >> size_set;
+    cout << endl;
+
+    for(int i = 0; i != size_set; ++i)
+    {
+        cout << "Please enter the " << (i + 1) << "-th element: ";
+        int idx;
+        cin >> idx;
+
+        if(idx <= dimX)
+            subset.insert(idx);
+        else
+        {
+            cout << "Out of range. Please enter it again." << endl;
+            --i;
+            continue;
+        }
+    }
+
+    BackwardDropping::printSet(subset);
+    cout << endl;
+
+    set<int> max_subset = trainingSet.findMaxSubset(subset).second;
 }

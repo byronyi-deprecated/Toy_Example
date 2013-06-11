@@ -14,10 +14,10 @@ BackwardDropping::BackwardDropping(int** observation, unsigned int num_x, unsign
     }
 
     int Y1_cnt = 0;
-    for(int j = 0; j != 2000; ++j)
+    for(unsigned int j = 0; j != sample_size; ++j)
         Y1_cnt += data[0][j];
 
-    ratio = Y1_cnt / 2000.0;
+    ratio = Y1_cnt / (double) sample_size;
 }
 
 BackwardDropping::~BackwardDropping()
@@ -28,8 +28,11 @@ BackwardDropping::~BackwardDropping()
     delete [] data;
 }
 
-pair<double,set<int> > findMaxSubset(const set<int>& subset)
+
+
+pair<double,set<int> > BackwardDropping::findMaxSubset(const set<int>& subset)
 {
+    cout << "The I stat of initial subset is " << I_stat(subset) << endl << endl;
     map<double, set<int> > candidates;
 
     double i_stat = I_stat(subset);
@@ -48,15 +51,21 @@ pair<double,set<int> > findMaxSubset(const set<int>& subset)
 
     double max_I_stat = 0.0;
 
-    for(map<double, set<int> > iter = candidates.begin(); iter != candidates.end(); ++iter)
+    for(map<double, set<int> >::iterator iter = candidates.begin(); iter != candidates.end(); ++iter)
         max_I_stat = (iter->first > max_I_stat)? iter->first : max_I_stat;
 
-    map<double, set<int> > max_iter = candidates.find(max_I_stat);
+    map<double, set<int> >::iterator max_iter = candidates.find(max_I_stat);
+
+    cout << "Found the set yielding the highest i_stat. The i_stat is " << max_iter->first << endl;
+    printSet(max_iter->second);
+    cout << endl;
 
     return *max_iter;
 }
 
-pair<double, set<int> > dropOneVariable(const set<int>& subset)
+
+
+pair<double, set<int> > BackwardDropping::dropOneVariable(const set<int>& subset)
 {
     map<double, set<int> > candidates;
 
@@ -71,12 +80,12 @@ pair<double, set<int> > dropOneVariable(const set<int>& subset)
 
     double max_I_stat = 0.0;
 
-    for(map<double, set<int> > iter = candidates.begin(); iter != candidates.end(); ++iter)
+    for(map<double, set<int> >::iterator iter = candidates.begin(); iter != candidates.end(); ++iter)
         max_I_stat = (iter->first > max_I_stat)? iter->first : max_I_stat;
 
-    map<double, set<int> > max_iter = candidates.find(max_I_stat);
+    map<double, set<int> >::iterator max_iter = candidates.find(max_I_stat);
 
-    if(max_I_stat == candidates.end())
+    if(max_iter == candidates.end())
     {
         cout << "Cannot drop a variable by max I stat. Drop a variable by chance." << endl;
 
@@ -86,8 +95,22 @@ pair<double, set<int> > dropOneVariable(const set<int>& subset)
         return pair<double, set<int> >(I_stat(tentative), tentative);
     }
 
+    cout << "Dropped one variable. The I stat is " << max_iter->first << endl;
+    printSet(max_iter->second);
+    cout << endl;
+
     return *max_iter;
 }
+
+
+void BackwardDropping::printSet(const set<int>& s)
+{
+    cout << "Printing the current set: ";
+    for(set<int>::iterator iter = s.begin(); iter != s.end(); ++iter)
+        cout << *iter << ' ';
+    cout << endl;
+}
+
 
 double BackwardDropping::I_stat(const set<int>& s)
 {
@@ -122,18 +145,7 @@ double BackwardDropping::I_stat(const set<int>& s)
         }
 
         i_stat += pow(ratio * partition_size - Y1_cnt, 2);
-
-        cout << "Variables in subset: x_{1 2 3 4}.\nThe partition comes from ";
-        printBinaryIndex(4, cnt++);
-        cout << endl;
-        cout << "partition size is " << partition_size << endl;
-        cout << "Num of Y1 is " << Y1_cnt << endl;
-        cout << "Y1 ratio in the partition is " << ((double) Y1_cnt / partition_size) << endl;
-        cout << endl;
     }
-
-    cout << "The Y1 ratio in whole sample is " << ratio << endl;
-    cout << "I_stat is " << i_stat << endl;
 
     return i_stat;
 }
